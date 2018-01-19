@@ -3,6 +3,7 @@ package io.getquill.context.sql.idiom
 import io.getquill.idiom.StatementInterpolator._
 import io.getquill.context.sql.norm._
 import io.getquill.ast._
+import io.getquill.ast.BooleanOperator._
 import io.getquill.context.sql.FlattenSqlQuery
 import io.getquill.context.sql.FromContext
 import io.getquill.context.sql.InfixContext
@@ -159,8 +160,15 @@ trait SqlIdiom extends Idiom {
     case BinaryOperation(a, EqualityOperator.`!=`, NullValue) => stmt"${scopedTokenizer(a)} IS NOT NULL"
     case BinaryOperation(NullValue, EqualityOperator.`!=`, b) => stmt"${scopedTokenizer(b)} IS NOT NULL"
     case BinaryOperation(a, op @ SetOperator.`contains`, b)   => SetContainsToken(scopedTokenizer(b), op.token, a.token)
-    case BinaryOperation(a, op, b)                            => stmt"${scopedTokenizer(a)} ${op.token} ${scopedTokenizer(b)}"
-    case e: FunctionApply                                     => fail(s"Can't translate the ast to sql: '$e'")
+    case BinaryOperation(a, op @ `&&`, b) => (a, b) match {
+      case (BinaryOperation(_, `||`, _), BinaryOperation(_, `||`, _)) => stmt"${scopedTokenizer(a)} ${op.token} ${scopedTokenizer(b)}"
+      case (BinaryOperation(_, `||`, _), _) => stmt"${scopedTokenizer(a)} ${op.token} ${b.token}"
+      case (_, BinaryOperation(_, `||`, _)) => stmt"${a.token} ${op.token} ${scopedTokenizer(b)}"
+      case _ => stmt"${a.token} ${op.token} ${b.token}"
+    }
+    case BinaryOperation(a, op @ `||`, b) => stmt"${a.token} ${op.token} ${b.token}"
+    case BinaryOperation(a, op, b)        => stmt"${scopedTokenizer(a)} ${op.token} ${scopedTokenizer(b)}"
+    case e: FunctionApply                 => fail(s"Can't translate the ast to sql: '$e'")
   }
 
   implicit val setOperationTokenizer: Tokenizer[SetOperation] = Tokenizer[SetOperation] {

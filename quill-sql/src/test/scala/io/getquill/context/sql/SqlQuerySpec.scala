@@ -20,7 +20,7 @@ class SqlQuerySpec extends Spec {
         }
       }
       testContext.run(q).string mustEqual
-        "SELECT a.i, b.i FROM TestEntity a, TestEntity2 b WHERE (a.s IS NOT NULL) AND (b.i > a.i)"
+        "SELECT a.i, b.i FROM TestEntity a, TestEntity2 b WHERE a.s IS NOT NULL AND b.i > a.i"
     }
 
     "outer join query" in {
@@ -28,7 +28,7 @@ class SqlQuerySpec extends Spec {
         qr1.leftJoin(qr2).on((a, b) => a.s != null && b.i > a.i)
       }
       testContext.run(q).string mustEqual
-        "SELECT a.s, a.i, a.l, a.o, b.s, b.i, b.l, b.o FROM TestEntity a LEFT JOIN TestEntity2 b ON (a.s IS NOT NULL) AND (b.i > a.i)"
+        "SELECT a.s, a.i, a.l, a.o, b.s, b.i, b.l, b.o FROM TestEntity a LEFT JOIN TestEntity2 b ON a.s IS NOT NULL AND b.i > a.i"
     }
 
     "flat outer join" in {
